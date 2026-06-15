@@ -9,6 +9,8 @@
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🇮🇹</text></svg>">
 <title>Viaje Nápoles & Amalfi · Ale + Lucía · 16-23 jun 2026</title>
+<!-- Supabase SDK desde CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     color-scheme: light;
@@ -339,7 +341,25 @@
     <div>2 Nápoles + 3 Meta + 2 Sorrento centro</div>
   </div>
   <div class="countdown"><span>Quedan</span><span class="num" id="cdNum">—</span><span id="cdUnit">días</span></div>
+  <div id="syncIndicator" style="position:absolute;top:14px;right:18px;background:rgba(255,255,255,0.92);color:var(--mar-dark);padding:6px 12px;border-radius:999px;font-size:11.5px;font-weight:600;display:flex;align-items:center;gap:6px">
+    <span id="syncDot" style="width:8px;height:8px;border-radius:50%;background:#999;display:inline-block"></span>
+    <span id="syncText">localStorage</span>
+    <button id="whoBtn" style="background:transparent;border:none;color:var(--mar);cursor:pointer;font-size:11.5px;font-weight:600;padding:0 0 0 4px">?</button>
+  </div>
 </header>
+
+<!-- Modal "Quién soy" -->
+<div id="whoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;padding:24px;max-width:380px;width:100%">
+    <h3 style="margin:0 0 12px">¿Quién eres?</h3>
+    <p style="margin:0 0 14px;font-size:13.5px;color:var(--muted)">Para que veamos quién hace cada cambio. Solo lo escoges una vez en este dispositivo.</p>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn" style="flex:1" onclick="setWho('Ale')">👨 Ale</button>
+      <button class="btn buga" style="flex:1" onclick="setWho('Lucía')">👩 Lucía</button>
+    </div>
+    <button class="btn alt sm" style="width:100%" onclick="closeWho()">Cerrar</button>
+  </div>
+</div>
 
 <nav class="tabs" id="tabs">
   <button class="active" data-tab="itinerario">📅 Itinerario</button>
@@ -1037,25 +1057,70 @@ const DAYS = [
       'Dormir y recuperar el viaje'
     ]
   },
-  { id:'d2', num:'Día 2', date:'Mié 17 jun', title:'Pompeya con guía + Nápoles ciudad', emoji:'🌋',
+  { id:'d2', num:'Día 2', date:'Mié 17 jun', title:'Pompeya MAÑANA + Nápoles TARDE (full city)', emoji:'🌋',
     items: [
+      '═══ MAÑANA · POMPEYA ═══',
       '07:30 despertar · café rápido en bar Vico Croce',
-      '08:15 salir apartamento andando a Porta Nolana (15 min)',
-      '08:30 comprar billete Circumvesuviana en máquina amarilla EAV (6,40€ los 2)',
+      '08:00 desayuno (cornetto + cappuccino) en bar de barrio',
+      '08:20 ⚠️ SALIR DEL APARTAMENTO (no demorar)',
+      '08:30 llegar Porta Nolana (10 min andando vía Corso Umberto I)',
+      '08:32 comprar billete Circumvesuviana máquina EAV (6,40€ los 2 ida)',
+      '08:38 validar billete y subir a Andén 3 (dirección SORRENTO)',
       '08:41 🚂 Circumvesuviana Porta Nolana → Pompei Scavi (32 min)',
       '09:13 llegada Pompei Scavi - Villa dei Misteri',
-      '09:18 andar 2 min a Porta Marina Superiore (punto encuentro)',
+      '09:18 andar 2 min a Porta Marina Superiore (punto encuentro Civitatis)',
       '10:00 ⭐ INICIO Civitatis "Visita guiada por Pompeya" (2h, español, 60€ los 2)',
       '       — Foro, Casa del Fauno, Lupanare, Termas, Anfiteatro con guía profesional',
-      '12:00 fin de visita guiada · exploración libre por nuestra cuenta',
+      '12:00 fin visita guiada · exploración libre',
       '12:00-13:00 Villa de los Misterios + zonas que el guía no cubre',
-      '13:00 comida ligera cerca entrada (Caupona di Sotero o panini)',
-      '14:30 Circumvesuviana Pompei Scavi → Nápoles',
-      '15:30 vuelta Vico Croce, ducha rápida',
-      '16:30 Cappella Sansevero (Cristo Velato — hora reservada online)',
-      '17:30 Spaccanapoli + San Gregorio Armeno + Duomo',
-      '19:00 Aperitivo en Enoteca Belledonne (Chiaia)',
-      '21:00 Cena pizzería: 50 Kalò (Mergellina) o Concettina ai Tre Santi (Sanità — RESERVAR)'
+      '13:00 snack ligero en Pompei (NO comida, comemos street food en Nápoles)',
+      '13:30 🚂 Circumvesuviana Pompei Scavi → Porta Nolana',
+      '14:05 llegada Porta Nolana',
+      '14:15 andar 10 min al apartamento Vico Croce',
+      '14:30 ducha rápida + cambio de ropa',
+      '',
+      '═══ TARDE · NÁPOLES STREET FOOD + MONUMENTAL ═══',
+      '15:00 🍕 COMIDA CALLEJERA NAPOLITANA en Spaccanapoli',
+      '       — Pizza fritta en La Masardona (Via Capitelli, 27)',
+      '       — Cuoppo napolitano (pescado y frituras en cono de papel)',
+      '       — Sfogliatella en Sfogliatella Mary (Galleria Umberto)',
+      '       Paseo por las callejuelas más famosas mientras comes',
+      '',
+      '16:00 🛍 Via San Gregorio Armeno (la calle de los belenes)',
+      '       — Talleres artesanales de figuras tradicionales',
+      '       — Dedicar 30-40 min',
+      '',
+      '16:45 ⛪ Piazza del Gesù Nuovo + Monastero di Santa Chiara',
+      '       — Una de las plazas más bonitas del centro',
+      '       — Claustro de Santa Chiara (6€/p · uno de los rincones más bonitos)',
+      '',
+      '17:30 🏰 Duomo di Napoli (Catedral)',
+      '       — La iglesia más importante de la ciudad',
+      '       — 15-20 min · gratis',
+      '',
+      '18:15 🚶 Bajar caminando hacia la zona monumental (vía Via Toledo)',
+      '',
+      '18:30 🏛 Piazza del Plebiscito · LA MÁS IMPRESIONANTE',
+      '       — Palazzo Reale di Napoli (exterior)',
+      '       — Basilica Reale Pontificia San Francesco di Paola',
+      '',
+      '19:00 🏯 Castel Nuovo (foto exterior, no hace falta entrar)',
+      '',
+      '19:30 🌅 LUNGOMARE Caracciolo + Castel dell\'Ovo · EL PASEO MÁS BONITO',
+      '       — Vistas al Vesubio, Capri y toda la bahía',
+      '       — Sunset golden hour ⭐',
+      '',
+      '20:34 🌅 PUESTA DE SOL · perfecta luz en Lungomare',
+      '',
+      '20:45 🍹 APEROL SPRITZ en BORGO MARINARI (al lado del Castel dell\'Ovo)',
+      '       — La zona más agradable para tomar algo viendo el mar',
+      '       — Aperitivo italiano: spritz + tabla de antipasti',
+      '',
+      '21:30 🍝 CENA EN CHIAIA (zona elegante)',
+      '       — Opciones top: Umberto (clásico 1916, RESERVAR) · Concettina ai Tre Santi (pizza Michelin, RESERVAR) · 50 Kalò (Mergellina, pizza brutal)',
+      '       — Después de cenar: paseo por Via Chiaia + Piazza dei Martiri',
+      '',
+      '23:30 vuelta Vico Croce (taxi 10€ desde Chiaia o metro M6)'
     ]
   },
   { id:'d3', num:'Día 3', date:'Jue 18 jun', title:'Traslado a Meta · día tranquilo', emoji:'🌊',
@@ -1213,9 +1278,15 @@ const COMER = {
   ],
   'Nápoles · Café & Dulces': [
     { name:'Gran Caffè Gambrinus', area:'Piazza Trieste', note:'Histórico 1860. Sfogliatella + caffè.', map:'https://maps.app.goo.gl/?q=Gambrinus+Napoli' },
+    { name:'Sfogliatella Mary ⭐', area:'Galleria Umberto I', note:'⭐ MIÉ 17 tarde · sfogliatella legendaria justo al lado de Piazza Plebiscito.', map:'https://maps.app.goo.gl/?q=Sfogliatella+Mary+Napoli' },
     { name:'Scaturchio', area:'San Domenico Maggiore', note:'Sfogliatella + babà desde 1905.', map:'https://maps.app.goo.gl/?q=Scaturchio+Napoli' },
     { name:'Gay-Odin', area:'Via Toledo', note:'Chocolate artesano. Probad la foresta.', map:'https://maps.app.goo.gl/?q=Gay-Odin+Napoli' },
     { name:'Friggitoria Vomero', area:'Vomero', note:'Cuoppo de frituras desde 1938.', map:'https://maps.app.goo.gl/?q=Friggitoria+Vomero' }
+  ],
+  'Nápoles · Street food (mié 17 tarde)': [
+    { name:'La Masardona ⭐', area:'Via Capitelli 27 · Spaccanapoli', note:'⭐ MIÉ 17 15:00 · La pizza fritta más famosa de Nápoles. Comer de pie en la calle. ~5€.', map:'https://maps.app.goo.gl/?q=La+Masardona+Napoli' },
+    { name:'Cuoppo napolitano', area:'Spaccanapoli', note:'⭐ MIÉ 17 15:30 · Pescado y frituras en cono de papel. Varios puestos. 6-8€.', map:'https://maps.app.goo.gl/?q=Cuoppo+napoletano+Spaccanapoli' },
+    { name:'Borgo Marinari', area:'Junto Castel dell\'Ovo', note:'⭐ MIÉ 17 20:45 · Zona perfecta para Aperol Spritz al atardecer viendo el mar.', map:'https://maps.app.goo.gl/?q=Borgo+Marinari+Napoli' }
   ],
   'Sorrento & Sant\'Agnello (días 18-20)': [
     { name:'La Cantinaccia del Popolo', area:'Sant\'Agnello', tag:'reservar', note:'Salumeria-trattoria muy local.', map:'https://maps.app.goo.gl/?q=La+Cantinaccia+del+Popolo' },
@@ -1248,9 +1319,14 @@ const VER = {
   'Nápoles · Mar 16 + Mié 17 + Mar 23': [
     { name:'Cappella Sansevero / Cristo Velato', tag:'reservar', note:'⭐ 10€. Reservar 60 días antes en museosansevero.it. Mejor 12-14h.', url:'https://www.museosansevero.it/en/online-tickets' },
     { name:'Museo Archeologico Nazionale (MANN)', note:'⭐ 22€. Mosaicos y frescos originales de Pompeya. Ver ANTES de Pompeya idealmente.' },
-    { name:'Spaccanapoli + San Gregorio Armeno', note:'Gratis. La calle de los belenes y la columna vertebral de Nápoles.' },
+    { name:'Spaccanapoli + Via San Gregorio Armeno', note:'⭐ MIÉ 17 16:00 · La calle de los belenes y la columna vertebral de Nápoles. 30-40 min.' },
+    { name:'Piazza del Gesù Nuovo + Monastero di Santa Chiara', note:'⭐ MIÉ 17 16:45 · Una de las plazas más bonitas. Claustro Santa Chiara 6€/p (uno de los rincones más bonitos).' },
+    { name:'Duomo di Napoli (Catedral)', note:'⭐ MIÉ 17 17:30 · La iglesia más importante de la ciudad. Gratis. 15-20 min.' },
+    { name:'Piazza del Plebiscito + Palazzo Reale', note:'⭐ MIÉ 17 18:30 · LA plaza más impresionante. Palazzo Reale (exterior) + Basilica Reale San Francesco di Paola.' },
+    { name:'Castel Nuovo', note:'⭐ MIÉ 17 19:00 · El castillo medieval emblemático. Foto desde fuera suficiente.' },
+    { name:'Castel dell\'Ovo + Lungomare Caracciolo', note:'⭐ MIÉ 17 19:30 · Imprescindible al atardecer. Sunset 20:34 · vistas Vesubio + Capri + bahía. EL paseo más bonito.' },
+    { name:'Via Chiaia + Piazza dei Martiri', note:'⭐ MIÉ 17 22:30 · Zona elegante de Nápoles. Pasear después de la cena en Chiaia.' },
     { name:'Catacombe di San Gennaro', tag:'reservar', note:'9€. Visita guiada. Lleva jersey ligero.' },
-    { name:'Castel dell\'Ovo + Lungomare', note:'Gratis (exterior). Imprescindible al atardecer.' },
     { name:'Rione Sanità + Palazzo dello Spagnolo', note:'El barrio más auténtico ahora.' }
   ],
   'Pompeya · Mié 17': [
@@ -1395,17 +1471,205 @@ const MALETA_COMUN = [
   { id:'c12', t:'Tarjeta sanitaria europea TSE' },
 ];
 
+// ═══════════════════════════════════════════════════════════════════
+// 🔌 SUPABASE_CONFIG · pega aquí tus credenciales para sincronizar
+// ───────────────────────────────────────────────────────────────────
+// Si dejas en blanco, la app usa solo localStorage (cada dispositivo
+// independiente). Si pones URL+KEY, se sincroniza con Supabase y tu
+// iPhone y el de Lucía ven los mismos datos.
+//
+// Cómo obtener URL y KEY: ver archivo supabase-schema.sql adjunto
+// (mismo directorio).
+// ═══════════════════════════════════════════════════════════════════
+
+const SUPABASE_URL = 'https://mwrpsaqjhrexripgxvnq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13cnBzYXFqaHJleHJpcGd4dm5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1NTM4NTgsImV4cCI6MjA5NzEyOTg1OH0.MZbLEAGHeSrPXhinKhoiFG47-pkk0gy6BWIDXBu01bc';
+const TRIP_KEY     = 'napoles-ale-lucia-2026';
+
+// ═══════════════════════════════════════════════════════════════════
+
 const LS = {
   get: k => { try { return JSON.parse(localStorage.getItem(k)||'null'); } catch(e){ return null; } },
   set: (k,v) => localStorage.setItem(k, JSON.stringify(v))
 };
-const STATE = LS.get('napoles-app-v2') || {
-  days: {}, hotels: {}, comer: {}, ver: {}, logi: {}, budget: {}, notes: '', wishes: { ale:[], lucia:[] },
-  missitios: {}, maleta: {}
+
+const DEFAULT_STATE = {
+  days: {}, hotels: {}, comer: {}, ver: {}, logi: {}, budget: {}, notes: '',
+  wishes: { ale:[], lucia:[] }, missitios: {}, maleta: {}
 };
+
+let STATE = LS.get('napoles-app-v2') || JSON.parse(JSON.stringify(DEFAULT_STATE));
 if (!STATE.missitios) STATE.missitios = {};
 if (!STATE.maleta) STATE.maleta = {};
-function save() { LS.set('napoles-app-v2', STATE); }
+
+// ───────────────────────────────────────────────────────────────────
+// SUPABASE: cliente + sync
+// ───────────────────────────────────────────────────────────────────
+
+let supabase = null;
+let supabaseEnabled = false;
+let WHO = localStorage.getItem('viaje-who') || 'unknown';
+
+function setSyncStatus(state, label) {
+  const dot = document.getElementById('syncDot');
+  const text = document.getElementById('syncText');
+  if (!dot || !text) return;
+  const colors = {
+    cloud:    '#2a9d8f',  // verde
+    saving:   '#f4a261',  // naranja
+    error:    '#d9534f',  // rojo
+    local:    '#999',     // gris
+    offline:  '#666'
+  };
+  dot.style.background = colors[state] || '#999';
+  text.textContent = label || state;
+}
+
+async function initSupabase() {
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    setSyncStatus('local', '📱 localStorage');
+    return;
+  }
+  if (typeof supabase === 'undefined' || !window.supabase) {
+    // SDK no cargó (puede pasar offline o CDN bloqueada)
+    setSyncStatus('local', '📵 offline · local');
+    return;
+  }
+  try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    supabaseEnabled = true;
+    setSyncStatus('saving', '☁ cargando...');
+    await loadFromSupabase();
+    setSyncStatus('cloud', '☁ sincronizado · ' + (WHO !== 'unknown' ? WHO : 'sin id'));
+    subscribeRealtime();
+  } catch (e) {
+    console.error('Supabase init error:', e);
+    supabaseEnabled = false;
+    setSyncStatus('error', '⚠ error cloud · usando local');
+  }
+}
+
+async function loadFromSupabase() {
+  if (!supabaseEnabled) return;
+  try {
+    const { data, error } = await supabase
+      .from('trip_state')
+      .select('state, updated_at, updated_by')
+      .eq('trip_key', TRIP_KEY)
+      .single();
+    if (error && error.code === 'PGRST116') {
+      // No existe el row, lo creamos
+      await supabase.from('trip_state').insert({
+        trip_key: TRIP_KEY,
+        state: STATE,
+        updated_by: WHO
+      });
+      return;
+    }
+    if (error) throw error;
+    if (data && data.state && Object.keys(data.state).length > 0) {
+      // Fusionamos: lo de cloud manda, pero conservamos defaults
+      STATE = Object.assign({}, DEFAULT_STATE, data.state);
+      if (!STATE.missitios) STATE.missitios = {};
+      if (!STATE.maleta) STATE.maleta = {};
+      LS.set('napoles-app-v2', STATE);
+      // Re-renderizar todo
+      rerenderAll();
+    }
+  } catch (e) {
+    console.error('Supabase load error:', e);
+    setSyncStatus('error', '⚠ error · usando local');
+  }
+}
+
+let saveTimer = null;
+let lastSaveAt = 0;
+
+async function saveToSupabase() {
+  if (!supabaseEnabled) return;
+  try {
+    setSyncStatus('saving', '☁ guardando...');
+    const { error } = await supabase
+      .from('trip_state')
+      .upsert({
+        trip_key: TRIP_KEY,
+        state: STATE,
+        updated_by: WHO
+      });
+    if (error) throw error;
+    lastSaveAt = Date.now();
+    setSyncStatus('cloud', '☁ guardado · ' + (WHO !== 'unknown' ? WHO : ''));
+  } catch (e) {
+    console.error('Supabase save error:', e);
+    setSyncStatus('error', '⚠ error · solo local');
+  }
+}
+
+function subscribeRealtime() {
+  if (!supabaseEnabled) return;
+  supabase
+    .channel('trip-' + TRIP_KEY)
+    .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'trip_state', filter: 'trip_key=eq.'+TRIP_KEY },
+        payload => {
+          // Otro dispositivo guardó. Si fue muy reciente puede ser nuestro propio cambio
+          if (Date.now() - lastSaveAt < 2000) return;
+          const incoming = payload.new && payload.new.state;
+          if (incoming && Object.keys(incoming).length > 0) {
+            STATE = Object.assign({}, DEFAULT_STATE, incoming);
+            LS.set('napoles-app-v2', STATE);
+            rerenderAll();
+            const by = payload.new.updated_by || 'el otro dispositivo';
+            setSyncStatus('cloud', '☁ ' + by + ' editó · sincronizado');
+          }
+        })
+    .subscribe();
+}
+
+function rerenderAll() {
+  if (typeof renderDays === 'function') renderDays();
+  if (typeof renderHotels === 'function') renderHotels();
+  if (typeof renderItemList === 'function') {
+    renderItemList('comer-list', COMER, 'comer');
+    renderItemList('ver-list', VER, 'ver');
+  }
+  if (typeof renderLogi === 'function') renderLogi();
+  if (typeof renderBudget === 'function') renderBudget();
+  if (typeof renderWishes === 'function') { renderWishes('ale'); renderWishes('lucia'); }
+  if (typeof renderMisSitios === 'function') renderMisSitios();
+  if (typeof renderMaletaList === 'function') {
+    renderMaletaList('maleta-ale', MALETA_ALE, 'ale');
+    renderMaletaList('maleta-lucia', MALETA_LUCIA, 'lucia');
+    renderMaletaList('maleta-comun', MALETA_COMUN, 'comun');
+  }
+  const notesEl = document.getElementById('notes');
+  if (notesEl && document.activeElement !== notesEl) notesEl.value = STATE.notes || '';
+}
+
+function save() {
+  LS.set('napoles-app-v2', STATE);  // siempre guardamos en local
+  if (supabaseEnabled) {
+    // Debounce de 800ms para no spamear Supabase
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveToSupabase, 800);
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────
+// "Quién soy" modal · para identificar cambios
+// ───────────────────────────────────────────────────────────────────
+function openWho() { document.getElementById('whoModal').style.display = 'flex'; }
+function closeWho() { document.getElementById('whoModal').style.display = 'none'; }
+function setWho(name) {
+  WHO = name;
+  localStorage.setItem('viaje-who', name);
+  closeWho();
+  setSyncStatus(supabaseEnabled?'cloud':'local',
+    (supabaseEnabled?'☁ sincronizado · ':'📱 local · ') + name);
+}
+window.openWho = openWho;
+window.closeWho = closeWho;
+window.setWho = setWho;
 
 function updateCountdown() {
   const now = new Date();
@@ -1790,6 +2054,19 @@ renderMisSitios();
 renderMaletaList('maleta-ale', MALETA_ALE, 'ale');
 renderMaletaList('maleta-lucia', MALETA_LUCIA, 'lucia');
 renderMaletaList('maleta-comun', MALETA_COMUN, 'comun');
+
+// Conectar botón "?" para preguntar quién soy
+document.getElementById('whoBtn').addEventListener('click', openWho);
+
+// Si no se ha identificado nadie todavía, abrir modal al cargar
+if (!localStorage.getItem('viaje-who')) {
+  setTimeout(openWho, 600);
+} else {
+  WHO = localStorage.getItem('viaje-who');
+}
+
+// Arrancar sync con Supabase (si está configurado)
+initSupabase();
 </script>
 </body>
 </html>
